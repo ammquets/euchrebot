@@ -1,0 +1,719 @@
+---
+title: "Untitled"
+author: "Andrea Quets"
+date: "12/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+line 263ish - dealer should either have a lower threshold (easy solution) or an understanding that the offered up card will go in their hand and replace the worst card (better solution)
+
+it also may be advantageous to have a threshold that is dependent on the order of play. ie. i may be less likely to order a card up to a dealer on my right if I know someone else might order it up and worst case scenario i'll get the first crack at declaring trump of a different suit.  also i'm more likely to order up a mediocre trump if i think someone else will call a suit i don't like before i have a chance to
+
+also, the threshold could be a lot lower in the second round of the last hand of play
+
+figure out what data i want to be collecting from this and code it in sooner than later so that it can all flow smoothly into a df. probably do this on the hand level rather than the trick level. dealer, red_team_points, blue_team_points, who_called_trump, point_score_of_hand_that_called_trump, threshold, order, hand_that_called_trump
+
+```{r}
+#important parameters
+
+trump_points = c(100,200,400,500,600,1000,1500)
+non_trump_points = c(1,2,3,4,5,90)
+threshold = 1700 
+
+```
+
+```{r}
+#who gets the deal?
+#deal goes to 1st black jack
+
+decide_deal = function() {
+
+  cards = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
+
+  deal = sample(cards, size = 24, replace = F)
+  player = rep(c(1:4), length(deal)/4)
+
+  decide_deal_df = tibble(deal, player)
+
+  decide_deal_df = decide_deal_df %>% 
+    filter(deal == "sJ" |deal == "cJ") %>% 
+    head(1)
+
+  dealer = as.numeric(decide_deal_df$player)
+  assign("dealer", dealer, envir=globalenv())
+
+  print(str_c("Player ", as.character(dealer), " deals."))
+}
+
+decide_deal()
+```
+
+```{r}
+#dealing
+
+deal = function() {
+  
+  cards = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
+
+  p1_hand = sample(cards, size = 5, replace = F)
+  assign("p1_hand", p1_hand, envir=globalenv())
+
+  cards = setdiff(cards,p1_hand)
+  p2_hand = sample(cards, size = 5, replace = F)
+  assign("p2_hand", p2_hand, envir=globalenv())
+
+  cards = setdiff(cards,p2_hand)
+  p3_hand = sample(cards, size = 5, replace = F)
+  assign("p3_hand", p3_hand, envir=globalenv())
+
+  cards = setdiff(cards,p3_hand)
+  p4_hand = sample(cards, size = 5, replace = F)
+  assign("p4_hand", p4_hand, envir=globalenv())
+
+  cards = setdiff(cards,p4_hand)
+  offered_up = sample(cards, size = 1, replace = F)
+  assign("offered_up", offered_up, envir=globalenv())
+
+  buried = setdiff(cards,offered_up)
+  print(str_c(offered_up, " is offered_up"))
+}
+
+deal()
+```
+
+```{r}
+#order of play
+decide_order = function(dealer){
+  
+  translate_player_id = function(x) {
+    if (x == 5) x = 1
+    if (x == 6) x = 2
+    if (x == 7) x = 3
+    if (x <= 4) x = x
+  }
+
+  order1 = translate_player_id(as.numeric(dealer +1))
+  order2 = translate_player_id(as.numeric(dealer +2))
+  order3 = translate_player_id(as.numeric(dealer +3))
+  order4 = dealer
+
+  order = c(order1, order2, order3, order4)
+  assign("order", order, envir=globalenv())
+
+  #print(order)
+}
+
+decide_order(dealer)
+```
+
+
+```{r}
+#strategies for deciding which card to discard. 
+#putting this ahead of deciding whether to order it up or not because the dealer needs this info on the first go around to decide if they should pick it up.
+#ill have to repeat later with minor changes. unfortunately
+
+#point values modified from https://scholarworks.unr.edu/bitstream/handle/11714/3774/Seelbinder_unr_0139M_11172.pdf?isAllowed=y&sequence=1
+
+cards2points_s = function(x) {
+  points = 0
+    if (is.element("s9",x) == TRUE) points = points + trump_points[1]
+    if (is.element("s10",x) == TRUE) points = points + trump_points[2]
+    if (is.element("sJ",x) == TRUE) points = points + trump_points[7]
+    if (is.element("sQ",x) == TRUE) points = points + trump_points[3]
+    if (is.element("sK",x) == TRUE) points = points + trump_points[4]
+    if (is.element("sA",x) == TRUE) points = points + trump_points[5]
+    if (is.element("h9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("h10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("hJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("hQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("hK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("hA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("c9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("c10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("cJ",x) == TRUE) points = points + trump_points[6]
+    if (is.element("cQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("cK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("cA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("d9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("d10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("dJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("dQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("dK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("dA",x) == TRUE) points = points + non_trump_points[6]
+  assign("points", points, envir=globalenv())
+}
+
+cards2points_h = function(x) {
+  points = 0
+    if (is.element("s9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("s10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("sJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("sQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("sK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("sA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("h9",x) == TRUE) points = points + trump_points[1]
+    if (is.element("h10",x) == TRUE) points = points + trump_points[2]
+    if (is.element("hJ",x) == TRUE) points = points + trump_points[7]
+    if (is.element("hQ",x) == TRUE) points = points + trump_points[3]
+    if (is.element("hK",x) == TRUE) points = points + trump_points[4]
+    if (is.element("hA",x) == TRUE) points = points + trump_points[5]
+    if (is.element("c9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("c10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("cJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("cQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("cK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("cA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("d9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("d10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("dJ",x) == TRUE) points = points + trump_points[6]
+    if (is.element("dQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("dK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("dA",x) == TRUE) points = points + non_trump_points[6]
+  assign("points", points, envir=globalenv())
+}
+
+cards2points_c = function(x) {
+  points = 0
+    if (is.element("s9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("s10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("sJ",x) == TRUE) points = points + trump_points[6]
+    if (is.element("sQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("sK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("sA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("h9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("h10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("hJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("hQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("hK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("hA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("c9",x) == TRUE) points = points + trump_points[1]
+    if (is.element("c10",x) == TRUE) points = points + trump_points[2]
+    if (is.element("cJ",x) == TRUE) points = points + trump_points[7]
+    if (is.element("cQ",x) == TRUE) points = points + trump_points[3]
+    if (is.element("cK",x) == TRUE) points = points + trump_points[4]
+    if (is.element("cA",x) == TRUE) points = points + trump_points[5]
+    if (is.element("d9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("d10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("dJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("dQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("dK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("dA",x) == TRUE) points = points + non_trump_points[6]
+  assign("points", points, envir=globalenv())
+}
+
+cards2points_d = function(x) {
+  points = 0
+    if (is.element("s9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("s10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("sJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("sQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("sK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("sA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("h9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("h10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("hJ",x) == TRUE) points = points + trump_points[6]
+    if (is.element("hQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("hK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("hA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("c9",x) == TRUE) points = points + non_trump_points[1]
+    if (is.element("c10",x) == TRUE) points = points + non_trump_points[2]
+    if (is.element("cJ",x) == TRUE) points = points + non_trump_points[3]
+    if (is.element("cQ",x) == TRUE) points = points + non_trump_points[4]
+    if (is.element("cK",x) == TRUE) points = points + non_trump_points[5]
+    if (is.element("cA",x) == TRUE) points = points + non_trump_points[6]
+    if (is.element("d9",x) == TRUE) points = points + trump_points[1]
+    if (is.element("d10",x) == TRUE) points = points +  trump_points[2]
+    if (is.element("dJ",x) == TRUE) points = points + trump_points[7]
+    if (is.element("dQ",x) == TRUE) points = points + trump_points[3]
+    if (is.element("dK",x) == TRUE) points = points + trump_points[4]
+    if (is.element("dA",x) == TRUE) points = points + trump_points[5]
+  assign("points", points, envir=globalenv())
+}
+
+point_conv_by_suit = function(suit, hand) {
+  if (suit == "s") cards2points_s(hand)
+  if (suit == "h") cards2points_h(hand)
+  if (suit == "c") cards2points_c(hand)
+  if (suit == "d") cards2points_d(hand)
+} 
+
+#strategy 1: discard lowest ranked card
+strat1temp = function(dealer, offered_up, suit) {
+  temp_hand = c(eval(parse(text = str_c("p", dealer, "_hand"))), offered_up)
+  point_conv_by_suit(suit, temp_hand[1])
+  point1 = points
+  point_conv_by_suit(suit, temp_hand[2])
+  point2 = points
+  point_conv_by_suit(suit, temp_hand[3])
+  point3 = points
+  point_conv_by_suit(suit, temp_hand[4])
+  point4 = points
+  point_conv_by_suit(suit, temp_hand[5])
+  point5 = points
+  point_conv_by_suit(suit, temp_hand[6])
+  point6 = points
+  hand_point = c(point1, point2, point3, point4, point5, point6)
+  names(hand_point) = temp_hand
+  discard = names(hand_point)[which.min(hand_point)]
+}
+
+#strategy 2: try to be minimally suited
+
+whichstratbetter = function(dealer, offered_up, suit) {
+  temp_hand = c(eval(parse(text = str_c("p", dealer, "_hand"))), offered_up)
+  suit_list = substring(temp_hand, 1, 1)
+  names(suit_list) = temp_hand
+  if (suit == "d") left_bower = "hJ"
+  if (suit == "h") left_bower = "dJ"
+  if (suit == "s") left_bower = "cJ"
+  if (suit == "c") left_bower = "sJ"
+  temp = which(names(suit_list) == left_bower)
+  suit_list[temp] = suit
+  suit_freq = as.data.frame(table(suit_list)) %>% 
+    filter(suit_list != suit) 
+  suit_freq = suit_freq[suit_freq$Freq == min(suit_freq$Freq), ]
+  suits_to_examine = as.character(suit_freq$suit_list)
+
+  cards_to_examine = NULL
+  if (is.element("s",suits_to_examine) == TRUE) cards_to_examine = c(cards_to_examine, c("s9", "s10", "sJ", "sQ", "sK", "sA"))
+  if (is.element("c",suits_to_examine) == TRUE) cards_to_examine = c(cards_to_examine, c("c9", "c10", "cJ", "cQ", "cK", "cA"))
+  if (is.element("d",suits_to_examine) == TRUE) cards_to_examine = c(cards_to_examine, c("d9", "d10", "dJ", "dQ", "dK", "dA"))
+  if (is.element("h",suits_to_examine) == TRUE) cards_to_examine = c(cards_to_examine, c("h9", "h10", "hJ", "hQ", "hK", "hA"))
+  if (is.element(left_bower, cards_to_examine) == TRUE) cards_to_examine = setdiff(cards_to_examine, left_bower)
+  cards_to_examine = intersect(cards_to_examine, temp_hand)
+  assign("cards_to_examine", cards_to_examine, envir=globalenv())
+}
+
+strat2temp = function(dealer, offered_up, suit){
+  temp_hand = cards_to_examine
+  point_conv_by_suit(suit, temp_hand[1])
+  point1 = points
+  point_conv_by_suit(suit, temp_hand[2])
+  point2 = points
+  point_conv_by_suit(suit, temp_hand[3])
+  point3 = points
+  point_conv_by_suit(suit, temp_hand[4])
+  point4 = points
+  point_conv_by_suit(suit, temp_hand[5])
+  point5 = points
+  hand_point = c(point1, point2, point3, point4, point5)
+  names(hand_point) = temp_hand
+  
+  temp = which(is.na(names(hand_point)))
+  temp2 = c(1:5)
+  temp3 = setdiff(temp2, temp)
+  hand_point = hand_point[temp3]
+  discard = names(hand_point)[which.min(hand_point)]
+  temp_hand = c(eval(parse(text = str_c("p", dealer, "_hand"))), offered_up)
+  assign("temp_hand", temp_hand, envir=globalenv())
+  
+}
+
+discard_decision_temp = function(dealer, offered_up, suit){
+  whichstratbetter(dealer, offered_up, suit)
+  if (is.null(cards_to_examine)) strat1temp(dealer, offered_up, suit)
+  if (!is.null(cards_to_examine)) strat2temp(dealer, offered_up, suit)
+}
+
+suit = substring(offered_up, 1, 1)
+
+discard_decision_temp(dealer, offered_up, suit)
+
+```
+
+
+look at hand and decide what percentage of the time that hand would win
+what threshold is appropriate for ordering it up?
+maybe change point values so that ordering it up is more possible without bowers, but witht eh right card combination? or just set a lower threshold
+```{r}
+#decide if you want to order it up
+
+order_up_1st_try = function(suit, order, threshold){
+  point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
+  if (points >= threshold){
+    print(str_c("player ", order[1], " orders it up"))
+    player_who_ordered_it_up = order[1]
+    assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+  }
+  if (points < threshold) {
+    point_conv_by_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
+    if (points >= threshold){
+      print(str_c("player ", order[2], " orders it up"))
+      player_who_ordered_it_up = order[2]
+      assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+    }
+    
+    if (points < threshold) {
+      point_conv_by_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
+      if (points >= threshold) {
+        print(str_c("player ", order[3], " orders it up"))
+        player_who_ordered_it_up = order[3]
+        assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+      }
+      if (points < threshold) {
+        point_conv_by_suit(suit, temp_hand)
+        if (points >= threshold) {
+          print(str_c("player ", order[4], " orders it up"))
+          player_who_ordered_it_up = order[4]
+          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+        }
+        if (points < threshold) {
+          print("bury it")
+          player_who_ordered_it_up = NA
+          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+        }
+      }
+    }
+  }
+}
+
+order_up_1st_try_silent = function(suit, order, threshold){
+  point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
+  if (points >= threshold){
+    #print(str_c("player ", order[1], " orders it up"))
+    player_who_ordered_it_up = order[1]
+    assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+    trump = suit
+    assign("trump", trump, envir=globalenv())
+  }
+  if (points < threshold) {
+    point_conv_by_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
+    if (points >= threshold){
+      #print(str_c("player ", order[2], " orders it up"))
+      player_who_ordered_it_up = order[2]
+      assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+      trump = suit
+      assign("trump", trump, envir=globalenv())
+    }
+    
+    if (points < threshold) {
+      point_conv_by_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
+      if (points >= threshold) {
+        #print(str_c("player ", order[3], " orders it up"))
+        player_who_ordered_it_up = order[3]
+        assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+        trump = suit
+        assign("trump", trump, envir=globalenv())
+      }
+      if (points < threshold) {
+        point_conv_by_suit(suit, temp_hand)
+        if (points >= threshold) {
+          #print(str_c("player ", order[4], " orders it up"))
+          player_who_ordered_it_up = order[4]
+          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+          trump = suit
+          assign("trump", trump, envir=globalenv())
+        }
+        if (points < threshold) {
+          #print("bury it")
+          player_who_ordered_it_up = NA
+          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+          trump = suit
+          assign("trump", trump, envir=globalenv())
+        }
+      }
+    }
+  }
+}
+
+order_up_1st_try(suit, order, threshold)
+
+```
+
+```{r}
+#if ordered up, which card does the dealer discard
+#note: doesn't actually pay attention to whether anything was ordered up or not, program that in later
+
+#strategy 1: discard lowest ranked card
+strat1 = function(dealer, offered_up, suit) {
+  temp_hand = c(eval(parse(text = str_c("p", dealer, "_hand"))), offered_up)
+  point_conv_by_suit(suit, temp_hand[1])
+  point1 = points
+  point_conv_by_suit(suit, temp_hand[2])
+  point2 = points
+  point_conv_by_suit(suit, temp_hand[3])
+  point3 = points
+  point_conv_by_suit(suit, temp_hand[4])
+  point4 = points
+  point_conv_by_suit(suit, temp_hand[5])
+  point5 = points
+  point_conv_by_suit(suit, temp_hand[6])
+  point6 = points
+  hand_point = c(point1, point2, point3, point4, point5, point6)
+  names(hand_point) = temp_hand
+  discard = names(hand_point)[which.min(hand_point)]
+  assign(str_c("p", dealer, "_hand"), setdiff(temp_hand, discard), envir=globalenv())
+  print(str_c("discarding ", discard))
+}
+
+#strategy 2: try to be minimally suited
+
+strat2 = function(dealer, offered_up, suit){
+  temp_hand = cards_to_examine
+  point_conv_by_suit(suit, temp_hand[1])
+  point1 = points
+  point_conv_by_suit(suit, temp_hand[2])
+  point2 = points
+  point_conv_by_suit(suit, temp_hand[3])
+  point3 = points
+  point_conv_by_suit(suit, temp_hand[4])
+  point4 = points
+  point_conv_by_suit(suit, temp_hand[5])
+  point5 = points
+  hand_point = c(point1, point2, point3, point4, point5)
+  names(hand_point) = temp_hand
+  
+  temp = which(is.na(names(hand_point)))
+  temp2 = c(1:5)
+  temp3 = setdiff(temp2, temp)
+  hand_point = hand_point[temp3]
+  discard = names(hand_point)[which.min(hand_point)]
+  temp_hand = c(eval(parse(text = str_c("p", dealer, "_hand"))), offered_up)
+  assign(str_c("p", dealer, "_hand"), setdiff(temp_hand, discard), envir=globalenv())
+  print(str_c("discarding ", discard))
+}
+
+discard_decision = function(dealer, offered_up, suit){
+  whichstratbetter(dealer, offered_up, suit)
+  if (is.null(cards_to_examine)) strat1(dealer, offered_up, suit)
+  if (!is.null(cards_to_examine)) strat2(dealer, offered_up, suit)
+}
+
+discard_decision(dealer, offered_up, suit)
+```
+
+```{r}
+#if card isn't ordered up, choose a suit other than the suit of the ordered up card
+
+best_suit = function(suit, hand) {
+  if (suit == "s"){
+    cards2points_c(hand)
+    points_c = points
+    cards2points_h(hand)
+    points_h = points
+    cards2points_d(hand)
+    points_d = points
+    points_suit = c(points_c, points_d, points_h)
+    names(points_suit) = c("c", "d", "h")
+  } 
+  if (suit == "h") {
+    cards2points_c(hand)
+    points_c = points
+    cards2points_s(hand)
+    points_s = points
+    cards2points_d(hand)
+    points_d = points
+    points_suit = c(points_c, points_d, points_s)
+    names(points_suit) = c("c", "d", "s")
+  }
+  if (suit == "c") {
+    cards2points_h(hand)
+    points_h = points
+    cards2points_s(hand)
+    points_s = points
+    cards2points_d(hand)
+    points_d = points
+    points_suit = c(points_d, points_s, points_h)
+    names(points_suit) = c("d","s", "h") 
+  }
+  if (suit == "d") {
+    cards2points_c(hand)
+    points_c = points
+    cards2points_s(hand)
+    points_s = points
+    cards2points_h(hand)
+    points_h = points
+    points_suit = c(points_c, points_s, points_h)
+    names(points_suit) = c("c", "s", "h")
+  }
+  suit2call = names(points_suit)[which.max(points_suit)]
+  assign("suit2call", suit2call, envir=globalenv())
+}
+
+order_up_2nd_try = function(suit, order, threshold){
+  best_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
+  if (points >= threshold){
+    print(str_c("Player ", order[1], " says ", suit2call, " is trump."))
+    player_who_called_trump = order[1]
+    assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+    trump = suit2call
+    assign("trump", trump, envir=globalenv())
+  }
+  if (points < threshold) {
+    best_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
+    if (points >= threshold){
+      print(str_c("Player ", order[2], " says ", suit2call, " is trump."))
+      player_who_called_trump = order[2]
+      assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+      trump = suit2call
+      assign("trump", trump, envir=globalenv())
+    }
+    if (points < threshold) {
+      best_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
+      if (points >= threshold){
+        print(str_c("Player ", order[3], " says ", suit2call, " is trump."))
+        player_who_called_trump =  order[3]
+        assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+        trump = suit2call
+        assign("trump", trump, envir=globalenv())
+      }
+      if (points < threshold) {
+        best_suit(suit, eval(parse(text = str_c("p", order[4], "_hand"))))
+        print(str_c("Player ", order[4], " says ", suit2call, " is trump."))
+        player_who_called_trump = order[4]
+        assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+      }
+    }
+  }
+}
+
+order_up_2nd_try(suit, order, threshold)
+
+```
+
+
+```{r}
+game_opening = function() {
+  decide_deal()
+  decide_order(dealer)
+}
+
+round_opening = function(){
+  deal()
+  suit = substring(offered_up, 1, 1)
+  discard_decision_temp(dealer, offered_up, suit)
+  order_up_1st_try(suit, order, threshold)
+  if (!is.na(player_who_ordered_it_up)){
+  discard_decision(dealer, offered_up, suit)
+  }
+  order_up_1st_try_silent(suit, order, threshold) 
+  if (points < threshold) {
+    order_up_2nd_try(suit, order, threshold)
+  }
+}
+```
+
+
+```{r}
+# figure out legal moves
+
+`%!in%` = Negate(`%in%`)
+#if blank card is lead, what are the legal moves for each players hand
+
+#legal moves doesn't consider the left bower. also it's currently having everyone play illegal moves for some reason
+find_legal_moves = function(lead_card, hand){
+
+  if (lead_card %in% c("h9", "h10", "hJ", "hQ", "hK", "hA") == TRUE) {
+    legal_moves = c("h9", "h10", "hJ", "hQ", "hK", "hA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    if ("h9" %!in% hand & "h10" %!in% hand & "hJ" %!in% hand & "hQ" %!in% hand & "hK" %!in% hand & "hA" %!in% hand == FALSE) {
+    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    }
+  }
+
+  if (lead_card %in% c("s9", "s10", "sJ", "sQ", "sK", "sA") == TRUE) {
+    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    if ("s9" %!in% hand & "s10" %!in% hand & "sJ" %!in% hand & "sQ" %!in% hand & "sK" %!in% hand & "sA" %!in% hand == FALSE) {
+    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    }
+  }
+
+  if (lead_card %in% c("d9", "d10", "dJ", "dQ", "dK", "dA") == TRUE) {
+    legal_moves = c("d9", "d10", "dJ", "dQ", "dK", "dA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    if ("d9" %!in% hand & "d10" %!in% hand & "dJ" %!in% hand & "dQ" %!in% hand & "dK" %!in% hand & "dA" %!in% hand == FALSE) {
+    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    }
+  }
+
+  if (lead_card %in% c("c9", "c10", "cJ", "cQ", "cK", "cA") == TRUE) {
+    legal_moves = c("c9", "c10", "cJ", "cQ", "cK", "cA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    if ("c9" %!in% hand & "c10" %!in% hand & "cJ" %!in% hand & "cQ" %!in% hand & "cK" %!in% hand & "cA" %!in% hand == FALSE) {
+    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
+    assign("legal_moves", legal_moves, envir=globalenv())
+    }
+  }
+
+}
+
+play1trick_random = function(order) {
+  lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
+  assign("lead_card", lead_card, envir=globalenv())
+  played_card = lead_card
+  played_cards = lead_card
+  hand = eval(parse(text = str_c("p", order[1], "_hand")))
+  assign(str_c("p", order[1], "_hand"), setdiff(hand, played_card), envir=globalenv())
+  
+  hand = eval(parse(text = str_c("p", order[2], "_hand")))
+  find_legal_moves(lead_card, hand)
+  played_card = sample(intersect(hand, legal_moves), 1) #random
+  played_cards = append(played_cards, played_card)
+  assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
+  
+  hand = eval(parse(text = str_c("p", order[3], "_hand")))
+  find_legal_moves(lead_card, hand)
+  played_card = sample(intersect(hand, legal_moves), 1) #random
+  played_cards = append(played_cards, played_card)
+  assign(str_c("p", order[3], "_hand"), setdiff(hand, played_card), envir=globalenv())
+  
+  hand = eval(parse(text = str_c("p", order[4], "_hand")))
+  find_legal_moves(lead_card, hand)
+  played_card = sample(intersect(hand, legal_moves), 1) #random
+  played_cards = append(played_cards, played_card)
+  assign(str_c("p", order[4], "_hand"), setdiff(hand, played_card), envir=globalenv())
+  
+  names(played_cards) = order 
+  assign("played_cards", played_cards, envir=globalenv())
+  #figrure out who won. 
+  #probably need a trick order variable because order is currently being used for deal order. this will change things inside of some of the fucntions unfortunately and u need to go back and find where
+  
+  
+}
+
+
+
+
+
+play1trick_random(order)
+
+
+
+
+# random_play = function() {
+#   
+# }
+# hands = tibble(p1_hand, p2_hand, p3_hand, p4_hand)
+# 
+# temp = as.numeric(sample(c(1:dim(hands[,order[1]])[1]), 1, replace = F))
+# 
+# 
+# played = eval(parse(text = str_c("p", order[1], "_hand")))[temp]
+# 
+# hands[temp, order[1]] = NA
+# 
+# #now dim won't work though because of the NAs which are gonna start propagating
+# 
+# 
+# length(hands[,order[1]][!is.na(hands[,order[1]])])
+```
+
+
+
+
+
+
+```{r}
+game_opening()
+round_opening()
+```
+
