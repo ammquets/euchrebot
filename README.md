@@ -35,6 +35,9 @@ The odds of success of a lone hand depend on the lay of the cards and the inacti
 ### Scoring
 The first team to score 10 points (or 5, 7, 11, or 15 points in some variations of the game) wins the game. 
 
+### Attribution
+All of the rules were copied and pasted from Wikipedia. With some minor deletions. https://en.wikipedia.org/wiki/Euchre#The_play
+
 # Dependencies
 tidyverse
 
