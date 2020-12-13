@@ -3,7 +3,7 @@
 ## Description
 A legal game of euchre. Plays to 10 points. Stick the dealer. Currently plays random (but legal) cards with no skill or strategy.
 
-# Rules
+## Rules
 ### Overview, objective, and scoring
 When naming a suit, a player asserts that their partnership intends to win the majority of tricks of the hand. A single point is scored when the bid succeeds, and two points are scored if the team that declared trump takes all five tricks (called a "march"). A failure of the calling partnership to win three tricks is referred to as being "euchred", and that partnership is penalized by giving the opposing partnership two points.[10]
 
@@ -38,6 +38,6 @@ The first team to score 10 points (or 5, 7, 11, or 15 points in some variations 
 ### Attribution
 All of the rules were copied and pasted from Wikipedia. With some minor deletions. https://en.wikipedia.org/wiki/Euchre#The_play
 
-# Dependencies
+## Dependencies
 tidyverse
 
