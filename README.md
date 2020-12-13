@@ -1,6 +1,7 @@
-# euchrebot
+## euchrebot
 
-Title (A Title Image too if possible…Edit them on canva.com if you are not a graphic designer.)
+# Title 
+
 Description(Describe by words and images alike)
 Demo(Images, Video links, Live Demo links)
 Technologies Used
