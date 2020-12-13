@@ -15,6 +15,7 @@ library(tidyverse)
 ```{r}
 #important parameters
 
+#point values modified from https://scholarworks.unr.edu/bitstream/handle/11714/3774/Seelbinder_unr_0139M_11172.pdf?isAllowed=y&sequence=1
 trump_points = c(100,200,400,500,600,1000,1500)
 non_trump_points = c(1,2,3,4,5,90)
 threshold = 1700 
@@ -82,25 +83,22 @@ deal = function() {
 ```
 
 ```{r}
-#order of play
+# use this to translate player id based on relationship if you add 1 to four, that makes 5 but you really mean to add one to four and get back to player one. 
 translate_player_id = function(x) {
     if (x == 5) x = 1
     if (x == 6) x = 2
     if (x == 7) x = 3
     if (x <= 4) x = x
   }
-decide_order = function(dealer){
-  
 
+#order of play
+decide_order = function(dealer){
   order1 = translate_player_id(as.numeric(dealer +1))
   order2 = translate_player_id(as.numeric(dealer +2))
   order3 = translate_player_id(as.numeric(dealer +3))
   order4 = dealer
-
   order = c(order1, order2, order3, order4)
   assign("order", order, envir=globalenv())
-
-  #print(order)
 }
 
 
@@ -109,11 +107,9 @@ decide_order = function(dealer){
 
 ```{r}
 #strategies for deciding which card to discard. 
+
+#scoring the hand based on whatever suit the offerred up card is. 
 #putting this ahead of deciding whether to order it up or not because the dealer needs this info on the first go around to decide if they should pick it up.
-#ill have to repeat later with minor changes. unfortunately
-
-#point values modified from https://scholarworks.unr.edu/bitstream/handle/11714/3774/Seelbinder_unr_0139M_11172.pdf?isAllowed=y&sequence=1
-
 cards2points_s = function(x) {
   points = 0
     if (is.element("s9",x) == TRUE) points = points + trump_points[1]
@@ -230,6 +226,7 @@ cards2points_d = function(x) {
   assign("points", points, envir=globalenv())
 }
 
+#function to choose which point counter to use
 point_conv_by_suit = function(suit, hand) {
   if (suit == "s") cards2points_s(hand)
   if (suit == "h") cards2points_h(hand)
@@ -238,6 +235,8 @@ point_conv_by_suit = function(suit, hand) {
 } 
 
 #strategy 1: discard lowest ranked card
+#temp because its a hypothetical in this situation
+#temp is just a bit diff from strat1 not temp
 strat1temp = function(dealer, offered_up, suit) {
   temp_hand = c(eval(parse(text = str_c("p", dealer, "_hand"))), offered_up)
   point_conv_by_suit(suit, temp_hand[1])
@@ -258,7 +257,7 @@ strat1temp = function(dealer, offered_up, suit) {
 }
 
 #strategy 2: try to be minimally suited
-
+#doesn't actually say which strat is better but comes out with a cards to examine variable which is used by discard decision temp to decide the strategy to use
 whichstratbetter = function(dealer, offered_up, suit) {
   temp_hand = c(eval(parse(text = str_c("p", dealer, "_hand"))), offered_up)
   suit_list = substring(temp_hand, 1, 1)
@@ -323,6 +322,7 @@ discard_decision_temp = function(dealer, offered_up, suit){
 
 ```{r}
 #decide if you want to order it up
+#first time around is for going alone at the higher threshold. second time is for normal
 
 order_up_1st_try = function(suit, order, threshold){
   point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
@@ -411,6 +411,7 @@ order_up_1st_try = function(suit, order, threshold){
   
 }
 
+# a silent version because i needed to reset some values without printing lots off stuff out
 order_up_1st_try_silent = function(suit, order, threshold){
   point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
   if (points >= go_alone_threshold){
@@ -520,7 +521,7 @@ order_up_1st_try_silent = function(suit, order, threshold){
 
 ```{r}
 #if ordered up, which card does the dealer discard
-
+#same as temp except this time it removes the card from the hand when strategy is used
 
 #strategy 1: discard lowest ranked card
 strat1 = function(dealer, offered_up, suit) {
@@ -628,6 +629,11 @@ best_suit = function(suit, hand) {
   assign("suit2call", suit2call, envir=globalenv())
 }
 
+
+```
+
+```{r}
+#what to call as trump if nobody orders the card up. 1st time around is for high alone threshold. second time around is for lower normal threshold. 
 order_up_2nd_try = function(suit, order, threshold){
   best_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
     if (points >= go_alone_threshold){
@@ -718,12 +724,11 @@ order_up_2nd_try = function(suit, order, threshold){
   maker = player_who_called_trump
   assign("maker", maker, envir=globalenv())
 }
-
-
 ```
 
 
 ```{r}
+#all the beginning stuff neatly packaged up
 game_opening = function() {
   decide_deal()
   decide_order(dealer)
@@ -733,6 +738,7 @@ game_opening = function() {
   assign("game_score_2_4", game_score_2_4, envir=globalenv())
 }
 
+#all the begginning of the hand stuff neatly packaged up
 round_opening = function(){
   deal()
   suit = substring(offered_up, 1, 1)
@@ -754,7 +760,7 @@ round_opening = function(){
 
 
 ```{r}
-# figure out legal moves
+#putting this early because its needed for later. figure out which player won the trick and make them the next dealer. also change the score at the trick level
 
 who_won_trick = function(trump, lead_card, played_cards) {
   lead_card = substring(lead_card, 1, 1)
@@ -898,9 +904,13 @@ who_won_trick = function(trump, lead_card, played_cards) {
   assign("order", order, envir=globalenv())
 }
 
+```
+
+```{r}
+#this is needed later
 `%!in%` = Negate(`%in%`)
 
-
+#find legal moves
 find_legal_moves = function(lead_card, hand) {
   if (trump == "d") {
     if (lead_card %in% c("d9", "d10", "dJ", "dQ", "dK", "dA", "hJ")){
@@ -970,6 +980,10 @@ find_legal_moves = function(lead_card, hand) {
 }
 
 
+```
+
+```{r}
+#play a trick. random but legal plays. 
 play1trick_random = function(order) {
   if (alone == 0){
     lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
@@ -1116,16 +1130,16 @@ play1trick_random = function(order) {
     names(played_cards) = order[-2]
     assign("played_cards", played_cards, envir=globalenv())
   }
-  #figrure out who won. 
   who_won_trick(trump, lead_card, played_cards)
   
     
 }
-
 ```
 
 
 ```{r}
+
+#play five tricks and change score on the game level
 play1hand = function(order) {
   play1trick_random(order)
   play1trick_random(order)
@@ -1180,7 +1194,6 @@ play1hand = function(order) {
       }
     }
   }
-  
   assign("game_score_1_3", game_score_1_3, envir=globalenv())
   assign("game_score_2_4", game_score_2_4, envir=globalenv())
 }
@@ -1190,7 +1203,7 @@ play1hand = function(order) {
 
 
 ```{r}
-
+#an entire game all wraped up nicely
 play_entire_game = function(){
   game_opening()
   round_opening()
@@ -1207,9 +1220,6 @@ play_entire_game = function(){
     print("team 2-4 wins!")
   }
 }
-
-
-
 
 ```
 
