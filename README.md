@@ -1,9 +1,11 @@
-## euchrebot
+# Euchre Bot
 
-# Title 
+## Description
+A legal game of euchre. Plays to 10 points. Stick the dealer. 
 
-Description(Describe by words and images alike)
-Demo(Images, Video links, Live Demo links)
-Technologies Used
-Special Gotchas of your projects (Problems you faced, unique elements of your project)
-Technical Description of your project like- Installation, Setup, How to contribute.
+# Rules
+link something here
+
+# Dependencies
+tidyverse
+
