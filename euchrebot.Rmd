@@ -18,6 +18,7 @@ library(tidyverse)
 trump_points = c(100,200,400,500,600,1000,1500)
 non_trump_points = c(1,2,3,4,5,90)
 threshold = 1700 
+go_alone_threshold = 2300
 
 ```
 
@@ -325,41 +326,86 @@ discard_decision_temp = function(dealer, offered_up, suit){
 
 order_up_1st_try = function(suit, order, threshold){
   point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
-  if (points >= threshold){
-    print(str_c("player ", order[1], " orders it up"))
+  if (points >= go_alone_threshold){
+    print(str_c("player ", order[1], " orders it up alone"))
+    alone = order[1]
+    assign("alone", alone, envir=globalenv())
     player_who_ordered_it_up = order[1]
     assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
   }
-  if (points < threshold) {
+  if (points < go_alone_threshold) {
     point_conv_by_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
-    if (points >= threshold){
-      print(str_c("player ", order[2], " orders it up"))
+    if (points >= go_alone_threshold){
+      print(str_c("player ", order[2], " orders it up alone"))
       player_who_ordered_it_up = order[2]
       assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+      alone = order[2]
+      assign("alone", alone, envir=globalenv())
     }
     
-    if (points < threshold) {
+    if (points < go_alone_threshold) {
       point_conv_by_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
-      if (points >= threshold) {
-        print(str_c("player ", order[3], " orders it up"))
+      if (points >= go_alone_threshold) {
+        print(str_c("player ", order[3], " orders it up alone"))
         player_who_ordered_it_up = order[3]
         assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+        alone = order[3]
+        assign("alone", alone, envir=globalenv())
       }
-      if (points < threshold) {
+      if (points < go_alone_threshold) {
         point_conv_by_suit(suit, temp_hand)
-        if (points >= threshold) {
-          print(str_c("player ", order[4], " orders it up"))
+        if (points >= go_alone_threshold) {
+          print(str_c("player ", order[4], " orders it up alone"))
           player_who_ordered_it_up = order[4]
           assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+          alone = order[4]
+          assign("alone", alone, envir=globalenv())
         }
-        if (points < threshold) {
-          print("bury it")
-          player_who_ordered_it_up = NA
-          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+        if (points < go_alone_threshold) {
+          alone = NA
+          assign("alone", alone, envir=globalenv())
         }
       }
     }
   }
+  if (points < go_alone_threshold){
+    point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
+    if (points >= threshold){
+      print(str_c("player ", order[1], " orders it up"))
+      player_who_ordered_it_up = order[1]
+      assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+    }
+    if (points < threshold) {
+      point_conv_by_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
+      if (points >= threshold){
+        print(str_c("player ", order[2], " orders it up"))
+        player_who_ordered_it_up = order[2]
+        assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+      }
+      
+      if (points < threshold) {
+        point_conv_by_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
+        if (points >= threshold) {
+          print(str_c("player ", order[3], " orders it up"))
+          player_who_ordered_it_up = order[3]
+          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+        }
+        if (points < threshold) {
+          point_conv_by_suit(suit, temp_hand)
+          if (points >= threshold) {
+            print(str_c("player ", order[4], " orders it up"))
+            player_who_ordered_it_up = order[4]
+            assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+          }
+          if (points < threshold) {
+            print("bury it")
+            player_who_ordered_it_up = NA
+            assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+          }
+        }
+      }
+    }
+  }  
   maker = player_who_ordered_it_up
   assign("maker", maker, envir=globalenv())
   
@@ -367,47 +413,100 @@ order_up_1st_try = function(suit, order, threshold){
 
 order_up_1st_try_silent = function(suit, order, threshold){
   point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
-  if (points >= threshold){
-    #print(str_c("player ", order[1], " orders it up"))
+  if (points >= go_alone_threshold){
+    #print(str_c("player ", order[1], " orders it up alone"))
+    alone = order[1]
+    assign("alone", alone, envir=globalenv())
     player_who_ordered_it_up = order[1]
     assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
     trump = suit
     assign("trump", trump, envir=globalenv())
   }
-  if (points < threshold) {
+  if (points < go_alone_threshold) {
     point_conv_by_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
-    if (points >= threshold){
-      #print(str_c("player ", order[2], " orders it up"))
+    if (points >= go_alone_threshold){
+      #print(str_c("player ", order[2], " orders it up alone"))
       player_who_ordered_it_up = order[2]
       assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+      alone = order[2]
+      assign("alone", alone, envir=globalenv())
       trump = suit
       assign("trump", trump, envir=globalenv())
     }
     
-    if (points < threshold) {
+    if (points < go_alone_threshold) {
       point_conv_by_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
-      if (points >= threshold) {
-        #print(str_c("player ", order[3], " orders it up"))
+      if (points >= go_alone_threshold) {
+        #print(str_c("player ", order[3], " orders it up alone"))
         player_who_ordered_it_up = order[3]
+        assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+        alone = order[3]
+        assign("alone", alone, envir=globalenv())
+        trump = suit
+        assign("trump", trump, envir=globalenv())
+      }
+      if (points < go_alone_threshold) {
+        point_conv_by_suit(suit, temp_hand)
+        if (points >= go_alone_threshold) {
+          #print(str_c("player ", order[4], " orders it up alone"))
+          player_who_ordered_it_up = order[4]
+          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+          alone = order[4]
+          assign("alone", alone, envir=globalenv())
+          trump = suit
+          assign("trump", trump, envir=globalenv())
+        }
+        if (points < go_alone_threshold) {
+          alone = NA
+          assign("alone", alone, envir=globalenv())
+        }
+      }
+    }
+  }
+  if (points < go_alone_threshold){
+    point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
+    if (points >= threshold){
+      #print(str_c("player ", order[1], " orders it up"))
+      player_who_ordered_it_up = order[1]
+      assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+      trump = suit
+      assign("trump", trump, envir=globalenv())
+    }
+    if (points < threshold) {
+      point_conv_by_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
+      if (points >= threshold){
+        #print(str_c("player ", order[2], " orders it up"))
+        player_who_ordered_it_up = order[2]
         assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
         trump = suit
         assign("trump", trump, envir=globalenv())
       }
+      
       if (points < threshold) {
-        point_conv_by_suit(suit, temp_hand)
+        point_conv_by_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
         if (points >= threshold) {
-          #print(str_c("player ", order[4], " orders it up"))
-          player_who_ordered_it_up = order[4]
+          #print(str_c("player ", order[3], " orders it up"))
+          player_who_ordered_it_up = order[3]
           assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
           trump = suit
           assign("trump", trump, envir=globalenv())
         }
         if (points < threshold) {
-          #print("bury it")
-          player_who_ordered_it_up = NA
-          assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
-          trump = suit
-          assign("trump", trump, envir=globalenv())
+          point_conv_by_suit(suit, temp_hand)
+          if (points >= threshold) {
+            #print(str_c("player ", order[4], " orders it up"))
+            player_who_ordered_it_up = order[4]
+            assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+            trump = suit
+            assign("trump", trump, envir=globalenv())
+          }
+          if (points < threshold) {
+            #print("bury it")
+            player_who_ordered_it_up = NA
+            assign("player_who_ordered_it_up", player_who_ordered_it_up, envir=globalenv())
+            trump = suit
+            assign("trump", trump, envir=globalenv())
+          }
         }
       }
     }
@@ -531,36 +630,88 @@ best_suit = function(suit, hand) {
 
 order_up_2nd_try = function(suit, order, threshold){
   best_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
-  if (points >= threshold){
-    print(str_c("Player ", order[1], " says ", suit2call, " is trump."))
-    player_who_called_trump = order[1]
-    assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
-    trump = suit2call
-    assign("trump", trump, envir=globalenv())
-  }
-  if (points < threshold) {
-    best_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
+    if (points >= go_alone_threshold){
+      print(str_c("Player ", order[1], " says ", suit2call, " is trump. I'm going alone."))
+      player_who_called_trump = order[1]
+      assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+      trump = suit2call
+      assign("trump", trump, envir=globalenv())
+      alone = order[1]
+      assign("alone", alone, envir=globalenv())
+    }
+    if (points < go_alone_threshold) {
+      best_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
+      if (points >= go_alone_threshold){
+        print(str_c("Player ", order[2], " says ", suit2call, " is trump. I'm going alone."))
+        player_who_called_trump = order[2]
+        assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+        trump = suit2call
+        assign("trump", trump, envir=globalenv())
+        alone = order[2]
+        assign("alone", alone, envir=globalenv())
+      }
+      if (points < go_alone_threshold) {
+        best_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
+        if (points >= go_alone_threshold){
+          print(str_c("Player ", order[3], " says ", suit2call, " is trump. I'm going alone."))
+          player_who_called_trump =  order[3]
+          assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+          trump = suit2call
+          assign("trump", trump, envir=globalenv())
+          alone = order[3]
+          assign("alone", alone, envir=globalenv())
+        }
+        if (points < go_alone_threshold) {
+          best_suit(suit, eval(parse(text = str_c("p", order[4], "_hand"))))
+          if (points >= go_alone_threshold){
+            print(str_c("Player ", order[4], " says ", suit2call, " is trump. I'm going alone."))
+            player_who_called_trump = order[4]
+            assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+            trump = suit2call
+            assign("trump", trump, envir=globalenv())
+            alone = order[4]
+            assign("alone", alone, envir=globalenv())
+          }
+          if (points < go_alone_threshold) {
+            alone = NA
+            assign("alone", alone, envir=globalenv())
+          }
+        }
+      }
+    }
+  if (points < go_alone_threshold){
+    best_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
     if (points >= threshold){
-      print(str_c("Player ", order[2], " says ", suit2call, " is trump."))
-      player_who_called_trump = order[2]
+      print(str_c("Player ", order[1], " says ", suit2call, " is trump."))
+      player_who_called_trump = order[1]
       assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
       trump = suit2call
       assign("trump", trump, envir=globalenv())
     }
     if (points < threshold) {
-      best_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
+      best_suit(suit, eval(parse(text = str_c("p", order[2], "_hand"))))
       if (points >= threshold){
-        print(str_c("Player ", order[3], " says ", suit2call, " is trump."))
-        player_who_called_trump =  order[3]
+        print(str_c("Player ", order[2], " says ", suit2call, " is trump."))
+        player_who_called_trump = order[2]
         assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
         trump = suit2call
         assign("trump", trump, envir=globalenv())
       }
       if (points < threshold) {
-        best_suit(suit, eval(parse(text = str_c("p", order[4], "_hand"))))
-        print(str_c("Player ", order[4], " says ", suit2call, " is trump."))
-        player_who_called_trump = order[4]
-        assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+        best_suit(suit, eval(parse(text = str_c("p", order[3], "_hand"))))
+        if (points >= threshold){
+          print(str_c("Player ", order[3], " says ", suit2call, " is trump."))
+          player_who_called_trump =  order[3]
+          assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+          trump = suit2call
+          assign("trump", trump, envir=globalenv())
+        }
+        if (points < threshold) {
+          best_suit(suit, eval(parse(text = str_c("p", order[4], "_hand"))))
+          print(str_c("Player ", order[4], " says ", suit2call, " is trump."))
+          player_who_called_trump = order[4]
+          assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+        }
       }
     }
   }
@@ -911,4 +1062,10 @@ play_entire_game()
 #   play_entire_game()
 # }
 ```
+
+
+```{r}
+system.time(play_entire_game())
+```
+
 
