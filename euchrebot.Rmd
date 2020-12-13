@@ -362,7 +362,7 @@ order_up_1st_try = function(suit, order, threshold){
           assign("alone", alone, envir=globalenv())
         }
         if (points < go_alone_threshold) {
-          alone = NA
+          alone = 0
           assign("alone", alone, envir=globalenv())
         }
       }
@@ -457,7 +457,7 @@ order_up_1st_try_silent = function(suit, order, threshold){
           assign("trump", trump, envir=globalenv())
         }
         if (points < go_alone_threshold) {
-          alone = NA
+          alone = 0
           assign("alone", alone, envir=globalenv())
         }
       }
@@ -673,7 +673,7 @@ order_up_2nd_try = function(suit, order, threshold){
             assign("alone", alone, envir=globalenv())
           }
           if (points < go_alone_threshold) {
-            alone = NA
+            alone = 0
             assign("alone", alone, envir=globalenv())
           }
         }
@@ -863,7 +863,20 @@ who_won_trick = function(trump, lead_card, played_cards) {
     }
   }
   temp_tibble = enframe(values)
-  scores_df = tibble(name = c(played_cards), player = order)
+  temp_order = order
+  if (order[1] == alone){
+    temp_order = order[-3]
+  }
+  if (order[2] == alone){
+    temp_order = order[-4]
+  }
+  if (order[3] == alone){
+    temp_order = order[-1]
+  }
+  if (order[4] == alone){
+    temp_order = order[-2]
+  }
+  scores_df = tibble(name = c(played_cards), player = temp_order)
   scores_df = left_join(scores_df, temp_tibble)
   scores_df = scores_df %>% 
     select(-name) %>% 
@@ -958,33 +971,151 @@ find_legal_moves = function(lead_card, hand) {
 
 
 play1trick_random = function(order) {
-  lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
-  assign("lead_card", lead_card, envir=globalenv())
-  played_card = lead_card
-  played_cards = lead_card
-  hand = eval(parse(text = str_c("p", order[1], "_hand")))
-  assign(str_c("p", order[1], "_hand"), setdiff(hand, played_card), envir=globalenv())
-  
-  hand = eval(parse(text = str_c("p", order[2], "_hand")))
-  find_legal_moves(lead_card, hand)
-  played_card = sample(intersect(hand, legal_moves), 1) #random
-  played_cards = append(played_cards, played_card)
-  assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
-  
-  hand = eval(parse(text = str_c("p", order[3], "_hand")))
-  find_legal_moves(lead_card, hand)
-  played_card = sample(intersect(hand, legal_moves), 1) #random
-  played_cards = append(played_cards, played_card)
-  assign(str_c("p", order[3], "_hand"), setdiff(hand, played_card), envir=globalenv())
-  
-  hand = eval(parse(text = str_c("p", order[4], "_hand")))
-  find_legal_moves(lead_card, hand)
-  played_card = sample(intersect(hand, legal_moves), 1) #random
-  played_cards = append(played_cards, played_card)
-  assign(str_c("p", order[4], "_hand"), setdiff(hand, played_card), envir=globalenv())
-  
-  names(played_cards) = order 
-  assign("played_cards", played_cards, envir=globalenv())
+  if (alone == 0){
+    lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
+    assign("lead_card", lead_card, envir=globalenv())
+    played_card = lead_card
+    played_cards = lead_card
+    hand = eval(parse(text = str_c("p", order[1], "_hand")))
+    assign(str_c("p", order[1], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[2], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[3], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[3], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[4], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[4], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    names(played_cards) = order 
+    assign("played_cards", played_cards, envir=globalenv())
+  }
+  if (order[1] == alone){
+    lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
+    assign("lead_card", lead_card, envir=globalenv())
+    played_card = lead_card
+    played_cards = lead_card
+    hand = eval(parse(text = str_c("p", order[1], "_hand")))
+    assign(str_c("p", order[1], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[2], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    # hand = eval(parse(text = str_c("p", order[3], "_hand")))
+    # find_legal_moves(lead_card, hand)
+    # played_card = sample(intersect(hand, legal_moves), 1) #random
+    # played_cards = append(played_cards, played_card)
+    # assign(str_c("p", order[3], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[4], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[4], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    names(played_cards) = order[-3]
+    assign("played_cards", played_cards, envir=globalenv())
+  }
+  if (order[2] == alone){
+    lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
+    assign("lead_card", lead_card, envir=globalenv())
+    played_card = lead_card
+    played_cards = lead_card
+    hand = eval(parse(text = str_c("p", order[1], "_hand")))
+    assign(str_c("p", order[1], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[2], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[3], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[3], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    # hand = eval(parse(text = str_c("p", order[4], "_hand")))
+    # find_legal_moves(lead_card, hand)
+    # played_card = sample(intersect(hand, legal_moves), 1) #random
+    # played_cards = append(played_cards, played_card)
+    # assign(str_c("p", order[4], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    names(played_cards) = order[-4]
+    assign("played_cards", played_cards, envir=globalenv())
+  }
+  if (order[3] == alone){
+    lead_card = sample(eval(parse(text = str_c("p", order[2], "_hand"))), 1) #this step currently random
+    assign("lead_card", lead_card, envir=globalenv())
+    played_card = lead_card
+    played_cards = lead_card
+    hand = eval(parse(text = str_c("p", order[2], "_hand")))
+    assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    # hand = eval(parse(text = str_c("p", order[2], "_hand")))
+    # find_legal_moves(lead_card, hand)
+    # played_card = sample(intersect(hand, legal_moves), 1) #random
+    # played_cards = append(played_cards, played_card)
+    # assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[3], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[3], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[4], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[4], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    names(played_cards) = order[-1] 
+    assign("played_cards", played_cards, envir=globalenv())
+  }
+  if (order[4] == alone){
+    lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
+    assign("lead_card", lead_card, envir=globalenv())
+    played_card = lead_card
+    played_cards = lead_card
+    hand = eval(parse(text = str_c("p", order[1], "_hand")))
+    assign(str_c("p", order[1], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    # hand = eval(parse(text = str_c("p", order[2], "_hand")))
+    # find_legal_moves(lead_card, hand)
+    # played_card = sample(intersect(hand, legal_moves), 1) #random
+    # played_cards = append(played_cards, played_card)
+    # assign(str_c("p", order[2], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[3], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[3], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    hand = eval(parse(text = str_c("p", order[4], "_hand")))
+    find_legal_moves(lead_card, hand)
+    played_card = sample(intersect(hand, legal_moves), 1) #random
+    played_cards = append(played_cards, played_card)
+    assign(str_c("p", order[4], "_hand"), setdiff(hand, played_card), envir=globalenv())
+    
+    names(played_cards) = order[-2]
+    assign("played_cards", played_cards, envir=globalenv())
+  }
   #figrure out who won. 
   who_won_trick(trump, lead_card, played_cards)
   
@@ -1001,28 +1132,55 @@ play1hand = function(order) {
   play1trick_random(order)
   play1trick_random(order)
   play1trick_random(order)
-  if (maker == 1 | maker == 3){
-    if (team_1_3 == 3 | team_1_3 == 4){
-      game_score_1_3 = game_score_1_3 + 1
+  if (alone == 0){
+    if (maker == 1 | maker == 3){
+      if (team_1_3 == 3 | team_1_3 == 4){
+        game_score_1_3 = game_score_1_3 + 1
+      }
+      if (team_1_3 == 5){
+        game_score_1_3 = game_score_1_3 + 2
+      }
+      if (team_2_4 == 5 | team_2_4 == 3 | team_2_4 == 4){
+      game_score_2_4 = game_score_2_4 + 2
+      }
     }
-    if (team_1_3 == 5){
+    if (maker == 2 | maker == 4){
+      if (team_2_4 == 3 | team_2_4 == 4){
+      game_score_2_4 = game_score_2_4 + 1
+      }
+      if (team_2_4 == 5){
+      game_score_2_4 = game_score_2_4 + 2
+      }
+      if (team_1_3 == 5 |team_1_3 == 3 | team_1_3 == 4){
       game_score_1_3 = game_score_1_3 + 2
-    }
-    if (team_2_4 == 5 | team_2_4 == 3 | team_2_4 == 4){
-    game_score_2_4 = game_score_2_4 + 2
+      }
     }
   }
-  if (maker == 2 | maker == 4){
-    if (team_2_4 == 3 | team_2_4 == 4){
-    game_score_2_4 = game_score_2_4 + 1
+  if (alone == 1 | alone == 3){
+    if (maker == 1 | maker == 3){
+      if (team_1_3 == 3 | team_1_3 == 4){
+        game_score_1_3 = game_score_1_3 + 1
+      }
+      if (team_1_3 == 5){
+        game_score_1_3 = game_score_1_3 + 4
+      }
+      if (team_2_4 == 5 | team_2_4 == 3 | team_2_4 == 4){
+      game_score_2_4 = game_score_2_4 + 2
+      }
     }
-    if (team_2_4 == 5){
-    game_score_2_4 = game_score_2_4 + 2
-    }
-    if (team_1_3 == 5 |team_1_3 == 3 | team_1_3 == 4){
-    game_score_1_3 = game_score_1_3 + 2
+    if (maker == 2 | maker == 4){
+      if (team_2_4 == 3 | team_2_4 == 4){
+      game_score_2_4 = game_score_2_4 + 1
+      }
+      if (team_2_4 == 5){
+      game_score_2_4 = game_score_2_4 + 4
+      }
+      if (team_1_3 == 5 |team_1_3 == 3 | team_1_3 == 4){
+      game_score_1_3 = game_score_1_3 + 2
+      }
     }
   }
+  
   assign("game_score_1_3", game_score_1_3, envir=globalenv())
   assign("game_score_2_4", game_score_2_4, envir=globalenv())
 }
@@ -1067,5 +1225,4 @@ play_entire_game()
 ```{r}
 system.time(play_entire_game())
 ```
-
 
