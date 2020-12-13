@@ -1,7 +1,7 @@
 # Euchre Bot
 
 ## Description
-A legal game of euchre. Plays to 10 points. Stick the dealer. Currently plays random (but legal) cards with no skill or strategy.
+A legal game of euchre. Plays to 10 points. Stick the dealer. Currently plays random (but legal) cards with no skill or strategy against itself. 
 
 ## Rules
 ### Overview, objective, and scoring
