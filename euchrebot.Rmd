@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Euchre Bot"
 author: "Andrea Quets"
 date: "12/6/2020"
 output: html_document
@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-line 263ish - dealer should either have a lower threshold (easy solution) or an understanding that the offered up card will go in their hand and replace the worst card (better solution)
+
 
 it also may be advantageous to have a threshold that is dependent on the order of play. ie. i may be less likely to order a card up to a dealer on my right if I know someone else might order it up and worst case scenario i'll get the first crack at declaring trump of a different suit.  also i'm more likely to order up a mediocre trump if i think someone else will call a suit i don't like before i have a chance to
 
@@ -50,7 +50,7 @@ decide_deal = function() {
   print(str_c("Player ", as.character(dealer), " deals."))
 }
 
-decide_deal()
+
 ```
 
 ```{r}
@@ -83,19 +83,19 @@ deal = function() {
   print(str_c(offered_up, " is offered_up"))
 }
 
-deal()
+
 ```
 
 ```{r}
 #order of play
-decide_order = function(dealer){
-  
-  translate_player_id = function(x) {
+translate_player_id = function(x) {
     if (x == 5) x = 1
     if (x == 6) x = 2
     if (x == 7) x = 3
     if (x <= 4) x = x
   }
+decide_order = function(dealer){
+  
 
   order1 = translate_player_id(as.numeric(dealer +1))
   order2 = translate_player_id(as.numeric(dealer +2))
@@ -108,7 +108,7 @@ decide_order = function(dealer){
   #print(order)
 }
 
-decide_order(dealer)
+
 ```
 
 
@@ -320,16 +320,12 @@ discard_decision_temp = function(dealer, offered_up, suit){
   if (!is.null(cards_to_examine)) strat2temp(dealer, offered_up, suit)
 }
 
-suit = substring(offered_up, 1, 1)
 
-discard_decision_temp(dealer, offered_up, suit)
 
 ```
 
 
-look at hand and decide what percentage of the time that hand would win
-what threshold is appropriate for ordering it up?
-maybe change point values so that ordering it up is more possible without bowers, but witht eh right card combination? or just set a lower threshold
+
 ```{r}
 #decide if you want to order it up
 
@@ -421,13 +417,12 @@ order_up_1st_try_silent = function(suit, order, threshold){
   }
 }
 
-order_up_1st_try(suit, order, threshold)
 
 ```
 
 ```{r}
 #if ordered up, which card does the dealer discard
-#note: doesn't actually pay attention to whether anything was ordered up or not, program that in later
+
 
 #strategy 1: discard lowest ranked card
 strat1 = function(dealer, offered_up, suit) {
@@ -484,7 +479,7 @@ discard_decision = function(dealer, offered_up, suit){
   if (!is.null(cards_to_examine)) strat2(dealer, offered_up, suit)
 }
 
-discard_decision(dealer, offered_up, suit)
+
 ```
 
 ```{r}
@@ -572,7 +567,6 @@ order_up_2nd_try = function(suit, order, threshold){
   }
 }
 
-order_up_2nd_try(suit, order, threshold)
 
 ```
 
@@ -581,6 +575,10 @@ order_up_2nd_try(suit, order, threshold)
 game_opening = function() {
   decide_deal()
   decide_order(dealer)
+  game_score_1_3 = 0
+  game_score_2_4 = 0
+  assign("game_score_1_3", game_score_1_3, envir=globalenv())
+  assign("game_score_2_4", game_score_2_4, envir=globalenv())
 }
 
 round_opening = function(){
@@ -595,6 +593,10 @@ round_opening = function(){
   if (points < threshold) {
     order_up_2nd_try(suit, order, threshold)
   }
+  team_1_3 = 0
+  team_2_4 = 0
+  assign("team_1_3", team_1_3, envir=globalenv())
+  assign("team_2_4", team_2_4, envir=globalenv())
 }
 ```
 
@@ -602,49 +604,206 @@ round_opening = function(){
 ```{r}
 # figure out legal moves
 
+who_won_trick = function(trump, lead_card, played_cards) {
+  lead_card = substring(lead_card, 1, 1)
+  if (trump == "s"){
+    if (lead_card == "s"){
+      names = c("sJ", "cJ","sA","sK", "sQ", "s10", "s9", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10",  "cQ", "cK", "cA")
+      values = c(20,19,18,17,16,15,14,rep(0,17))
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "c"){
+      names = c("sJ", "cJ","sA","sK", "sQ", "s10", "s9", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10",  "cQ", "cK", "cA")
+      values = c(20,19,18,17,16,15,14,rep(0,12), 1, 2, 3, 4, 5)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "h"){
+      names = c("sJ", "cJ","sA","sK", "sQ", "s10", "s9",  "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10",  "cQ", "cK", "cA", "h9", "h10", "hJ", "hQ", "hK", "hA")
+      values = c(20,19,18,17,16,15,14,rep(0,11), 1, 2, 3, 4, 5, 6)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "d"){
+      names = c("sJ", "cJ","sA","sK", "sQ", "s10", "s9", "c9", "c10",  "cQ", "cK", "cA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA")
+      values = c(20,19,18,17,16,15,14,rep(0,11), 1, 2, 3, 4, 5, 6)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+  }
+  if (trump == "h"){
+    if (lead_card == "h"){
+      names = c("hJ", "dJ", "hA", "hK","hQ", "h10","h9","sA","sK", "sQ","sJ",  "s10", "s9",  "d9", "d10",  "dQ", "dK", "dA", "c9", "c10","cJ",  "cQ", "cK", "cA"  )
+      values = c(20,19,18,17,16,15,14,rep(0,17))
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "d"){
+      names = c("hJ", "dJ", "hA", "hK","hQ", "h10","h9","sA","sK", "sQ","sJ",  "s10", "s9", "c9", "c10","cJ",  "cQ", "cK", "cA",  "d9", "d10",  "dQ", "dK", "dA"  )
+      values = c(20,19,18,17,16,15,14,rep(0,12), 1,2,3,4,5)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "c"){
+      names = c("hJ", "dJ", "hA", "hK","hQ", "h10","h9","sA","sK", "sQ","sJ",  "s10", "s9",  "d9", "d10",  "dQ", "dK", "dA", "c9", "c10","cJ",  "cQ", "cK", "cA"  )
+      values = c(20,19,18,17,16,15,14,rep(0,11), 1,2,3,4,5, 6)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "s"){
+      names = c("hJ", "dJ", "hA", "hK","hQ", "h10","h9",  "d9", "d10",  "dQ", "dK", "dA", "c9", "c10","cJ",  "cQ", "cK", "cA" ,"sA","sK", "sQ","sJ",  "s10", "s9" )
+      values = c(20,19,18,17,16,15,14,rep(0,11), 6,5,4,3,2,1)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+  }
+  if (trump == "d"){
+    if (lead_card == "d"){
+      names = c( "dJ","hJ", "dA", "dK", "dQ",  "d10","d9" , "hA", "hK","hQ", "h10","h9","sA","sK", "sQ","sJ",  "s10", "s9", "c9", "c10","cJ",  "cQ", "cK", "cA" )
+      values = c(20,19,18,17,16,15,14,rep(0,17))
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "h"){
+      names = c( "dJ","hJ", "dA", "dK", "dQ",  "d10","d9" ,"sA","sK", "sQ","sJ",  "s10", "s9", "c9", "c10","cJ",  "cQ", "cK", "cA", "hA", "hK","hQ", "h10","h9" )
+      values = c(20,19,18,17,16,15,14,rep(0,12),5,4,3,2,1)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "s"){
+      names = c( "dJ","hJ", "dA", "dK", "dQ",  "d10","d9" , "c9", "c10","cJ",  "cQ", "cK", "cA", "hA", "hK","hQ", "h10","h9" ,"sA","sK", "sQ","sJ",  "s10", "s9")
+      values = c(20,19,18,17,16,15,14,rep(0,11),6,5,4,3,2,1)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "c"){
+      names = c( "dJ","hJ", "dA", "dK", "dQ",  "d10","d9" , "hA", "hK","hQ", "h10","h9" ,"sA","sK", "sQ","sJ",  "s10", "s9", "c9", "c10","cJ",  "cQ", "cK", "cA")
+      values = c(20,19,18,17,16,15,14,rep(0,11),1,2,3,4,5,6)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+  }
+  if (trump == "c"){
+    if (lead_card == "c"){
+      names = c("cJ","sJ", "cA" , "cK",  "cQ", "c10", "c9",  "dA", "dK", "dQ", "dJ", "d10","d9" , "hA", "hK","hQ", "hJ","h10","h9" ,"sA","sK", "sQ",  "s10", "s9")
+      values = c(20,19,18,17,16,15,14,rep(0,17))
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "s"){
+      names = c("cJ","sJ", "cA" , "cK",  "cQ", "c10", "c9",  "dA", "dK", "dQ", "dJ", "d10","d9" , "hA", "hK","hQ", "hJ","h10","h9" ,"sA","sK", "sQ",  "s10", "s9")
+      values = c(20,19,18,17,16,15,14,rep(0,12), 5,4,3,2,1)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "d"){
+      names = c("cJ","sJ", "cA" , "cK",  "cQ", "c10", "c9" , "hA", "hK","hQ", "hJ","h10","h9" ,"sA","sK", "sQ",  "s10", "s9",  "dA", "dK", "dQ", "dJ", "d10","d9")
+      values = c(20,19,18,17,16,15,14,rep(0,11),6, 5,4,3,2,1)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+    if (lead_card == "h"){
+      names = c("cJ","sJ", "cA" , "cK",  "cQ", "c10", "c9"  ,"sA","sK", "sQ",  "s10", "s9",  "dA", "dK", "dQ", "dJ", "d10","d9", "hA", "hK","hQ", "hJ","h10","h9")
+      values = c(20,19,18,17,16,15,14,rep(0,11),6, 5,4,3,2,1)
+      names(values) = names
+      assign("values", values, envir=globalenv())
+    }
+  }
+  temp_tibble = enframe(values)
+  scores_df = tibble(name = c(played_cards), player = order)
+  scores_df = left_join(scores_df, temp_tibble)
+  scores_df = scores_df %>% 
+    select(-name) %>% 
+    deframe() 
+  best_score = names(which.max(scores_df))
+  best_score = as.numeric(best_score)
+  if (best_score == 1 | best_score == 3){
+    team_1_3 = team_1_3+ 1
+    assign("team_1_3", team_1_3, envir=globalenv())
+  }
+  if (best_score == 2 | best_score == 4){
+    team_2_4 = team_2_4+ 1
+    assign("team_2_4", team_2_4, envir=globalenv())
+  }
+  order[1] = best_score
+  order[2] = translate_player_id(best_score+1)
+  order[3] = translate_player_id(best_score+2)
+  order[4] = translate_player_id(best_score+3)
+  assign("order", order, envir=globalenv())
+ }
+
 `%!in%` = Negate(`%in%`)
-#if blank card is lead, what are the legal moves for each players hand
 
-#legal moves doesn't consider the left bower. also it's currently having everyone play illegal moves for some reason
-find_legal_moves = function(lead_card, hand){
 
-  if (lead_card %in% c("h9", "h10", "hJ", "hQ", "hK", "hA") == TRUE) {
-    legal_moves = c("h9", "h10", "hJ", "hQ", "hK", "hA")
-    assign("legal_moves", legal_moves, envir=globalenv())
-    if ("h9" %!in% hand & "h10" %!in% hand & "hJ" %!in% hand & "hQ" %!in% hand & "hK" %!in% hand & "hA" %!in% hand == FALSE) {
-    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
-    assign("legal_moves", legal_moves, envir=globalenv())
+find_legal_moves = function(lead_card, hand) {
+  if (trump == "d") {
+    if (lead_card %in% c("d9", "d10", "dJ", "dQ", "dK", "dA", "hJ")){
+      legal_moves = c("d9", "d10", "dJ", "dQ", "dK", "dA", "hJ")
+    }
+    if (lead_card %in% c("h9", "h10", "hQ", "hK", "hA")){
+      legal_moves = c("h9", "h10", "hQ", "hK", "hA")
+    }
+    if (lead_card %in% c("c9", "c10", "cJ", "cQ", "cK", "cA")) {
+      legal_moves = c("c9", "c10", "cJ", "cQ", "cK", "cA")
+    }
+    if (lead_card %in% c("s9", "s10", "sJ", "sQ", "sK", "sA")) {
+      legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA")
     }
   }
-
-  if (lead_card %in% c("s9", "s10", "sJ", "sQ", "sK", "sA") == TRUE) {
-    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA")
-    assign("legal_moves", legal_moves, envir=globalenv())
-    if ("s9" %!in% hand & "s10" %!in% hand & "sJ" %!in% hand & "sQ" %!in% hand & "sK" %!in% hand & "sA" %!in% hand == FALSE) {
-    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
-    assign("legal_moves", legal_moves, envir=globalenv())
+  if (trump == "h") {
+    if (lead_card %in% c("d9", "d10", "dQ", "dK", "dA")){
+      legal_moves = c("d9", "d10","dQ", "dK", "dA")
+    }
+    if (lead_card %in% c("h9", "h10", "hQ", "hK", "hA", "hJ", "dJ")){
+      legal_moves = c("h9", "h10", "hQ", "hK", "hA", "hJ", "dJ")
+    }
+    if (lead_card %in% c("c9", "c10", "cJ", "cQ", "cK", "cA")) {
+      legal_moves = c("c9", "c10", "cJ", "cQ", "cK", "cA")
+    }
+    if (lead_card %in% c("s9", "s10", "sJ", "sQ", "sK", "sA")) {
+      legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA")
     }
   }
-
-  if (lead_card %in% c("d9", "d10", "dJ", "dQ", "dK", "dA") == TRUE) {
-    legal_moves = c("d9", "d10", "dJ", "dQ", "dK", "dA")
-    assign("legal_moves", legal_moves, envir=globalenv())
-    if ("d9" %!in% hand & "d10" %!in% hand & "dJ" %!in% hand & "dQ" %!in% hand & "dK" %!in% hand & "dA" %!in% hand == FALSE) {
-    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
-    assign("legal_moves", legal_moves, envir=globalenv())
+  if (trump == "c") {
+    if (lead_card %in% c("d9", "d10", "dJ", "dQ", "dK", "dA")){
+      legal_moves = c("d9", "d10", "dJ", "dQ", "dK", "dA")
+    }
+    if (lead_card %in% c("h9", "h10", "hQ", "hK", "hA", "hJ")){
+      legal_moves = c("h9", "h10", "hQ", "hK", "hA", "hJ")
+    }
+    if (lead_card %in% c("c9", "c10", "cJ", "cQ", "cK", "cA", "sJ")) {
+      legal_moves = c("c9", "c10", "cJ", "cQ", "cK", "cA", "sJ")
+    }
+    if (lead_card %in% c("s9", "s10", "sQ", "sK", "sA")) {
+      legal_moves = c("s9", "s10", "sQ", "sK", "sA")
     }
   }
-
-  if (lead_card %in% c("c9", "c10", "cJ", "cQ", "cK", "cA") == TRUE) {
-    legal_moves = c("c9", "c10", "cJ", "cQ", "cK", "cA")
-    assign("legal_moves", legal_moves, envir=globalenv())
-    if ("c9" %!in% hand & "c10" %!in% hand & "cJ" %!in% hand & "cQ" %!in% hand & "cK" %!in% hand & "cA" %!in% hand == FALSE) {
-    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
-    assign("legal_moves", legal_moves, envir=globalenv())
+  if (trump == "s") {
+    if (lead_card %in% c("d9", "d10", "dJ", "dQ", "dK", "dA")){
+      legal_moves = c("d9", "d10", "dJ", "dQ", "dK", "dA")
+    }
+    if (lead_card %in% c("h9", "h10", "hQ", "hK", "hA", "hJ")){
+      legal_moves = c("h9", "h10", "hQ", "hK", "hA", "hJ")
+    }
+    if (lead_card %in% c("c9", "c10","cQ", "cK", "cA")) {
+      legal_moves = c("c9", "c10", "cQ", "cK", "cA")
+    }
+    if (lead_card %in% c("s9", "s10", "sQ", "sK", "sA", "sJ", "cJ")) {
+      legal_moves = c("s9", "s10", "sQ", "sK", "sA", "sJ", "cJ")
     }
   }
-
+  tf_list = NULL
+  for (i in legal_moves) {
+    temp = i %in% hand 
+    tf_list = append(tf_list, temp)
+  }
+  if (TRUE %!in% tf_list){
+    legal_moves = c("s9", "s10", "sJ", "sQ", "sK", "sA", "h9", "h10", "hJ", "hQ", "hK", "hA", "d9", "d10", "dJ", "dQ", "dK", "dA", "c9", "c10", "cJ", "cQ", "cK", "cA")
+  }
+  assign("legal_moves", legal_moves, envir=globalenv())
 }
+
 
 play1trick_random = function(order) {
   lead_card = sample(eval(parse(text = str_c("p", order[1], "_hand"))), 1) #this step currently random
@@ -675,16 +834,13 @@ play1trick_random = function(order) {
   names(played_cards) = order 
   assign("played_cards", played_cards, envir=globalenv())
   #figrure out who won. 
-  #probably need a trick order variable because order is currently being used for deal order. this will change things inside of some of the fucntions unfortunately and u need to go back and find where
+  who_won_trick(trump, lead_card, played_cards)
   
-  
+    
 }
 
 
 
-
-
-play1trick_random(order)
 
 
 
@@ -708,12 +864,55 @@ play1trick_random(order)
 ```
 
 
+```{r}
+play1hand = function(order) {
+  play1trick_random(order)
+  play1trick_random(order)
+  play1trick_random(order)
+  play1trick_random(order)
+  play1trick_random(order)
+  if (team_1_3 == 3 | team_1_3 == 4){
+    game_score_1_3 = game_score_1_3 + 1
+  }
+  if (team_1_3 == 5){
+    game_score_1_3 = game_score_1_3 + 2
+  }
+  if (team_2_4 == 5){
+    game_score_2_4 = game_score_2_4 + 2
+  }
+  if (team_2_4 == 3 | team_2_4 == 4){
+    game_score_2_4 = game_score_2_4 + 1
+  }
+  assign("game_score_1_3", game_score_1_3, envir=globalenv())
+  assign("game_score_2_4", game_score_2_4, envir=globalenv())
+}
+```
 
 
 
 
 ```{r}
-game_opening()
-round_opening()
+
+play_entire_game = function(order){
+  game_opening()
+  round_opening()
+  play1hand(order)
+  while (game_score_1_3 < 10 & game_score_2_4 <10) {
+    dealer = translate_player_id(dealer + 1)
+    round_opening()
+    play1hand(order)
+  }
+  if (game_score_1_3 >= 10){
+    print("team 1-3 wins!")
+  }
+  if (game_score_2_4 >= 10){
+    print("team 2-4 wins!")
+  }
+}
+
+play_entire_game(order)
+system.time(play_entire_game(order))
+
+
 ```
 
