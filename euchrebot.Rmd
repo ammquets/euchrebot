@@ -1,9 +1,10 @@
 ---
-title: "Euchre Bot"
+title: "Euchre Bot Data Collection"
 author: "Andrea Quets"
-date: "12/6/2020"
+date: "12/14/2020"
 output: html_document
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -21,6 +22,35 @@ non_trump_points = c(1,2,3,4,5,90)
 threshold = 1700 
 go_alone_threshold = 2300
 
+game_data = tibble(p1_hand = c(NA), p2_hand = c(NA), p3_hand = c(NA), p4_hand = c(NA), offered_up = c(NA), buried = c(NA), trump = c(NA), maker = c(NA), player_who_called_trump = c(NA), player_who_ordered_it_up = c(NA), alone = c(NA), dealer = c(NA), legal_moves = c(NA), played_card = c(NA), team_1_3 = c(NA), team_2_4 = c(NA), game_score_1_3 = c(NA), game_score_2_4 = c(NA), trump_points = c(NA), non_trump_points = c(NA), threshold = c(NA), go_alone_threshold = c(NA), trick_num = c(NA), hand_num = c(NA), game_num = c(NA), order = c(NA), lead_card = c(NA))
+
+p1_hand = NA
+p2_hand = NA
+p3_hand = NA
+p4_hand = NA
+offered_up = NA
+buried = NA
+trump = NA
+maker = NA
+player_who_called_trump = NA
+player_who_ordered_it_up = NA
+alone = NA
+dealer = NA
+legal_moves = NA
+played_card = NA
+team_1_3 = NA
+team_2_4 = NA
+game_score_1_3 = NA
+game_score_2_4 = NA
+#trump_points = NA
+#non_trump_points = NA
+#threshold = NA
+#go_alone_threshold = NA
+trick_num = NA
+hand_num = NA
+game_num = NA
+order = NA
+lead_card = NA
 ```
 
 ```{r}
@@ -76,6 +106,8 @@ deal = function() {
   assign("offered_up", offered_up, envir=globalenv())
 
   buried = setdiff(cards,offered_up)
+  assign("buried", buried, envir=globalenv())
+  
   print(str_c(offered_up, " is offered_up"))
 }
 
@@ -325,6 +357,9 @@ discard_decision_temp = function(dealer, offered_up, suit){
 #first time around is for going alone at the higher threshold. second time is for normal
 
 order_up_1st_try = function(suit, order, threshold){
+  player_who_called_trump = NA
+  assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+  player_who_ordered_it_up = NA
   point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
   if (points >= go_alone_threshold){
     print(str_c("player ", order[1], " orders it up alone"))
@@ -413,6 +448,9 @@ order_up_1st_try = function(suit, order, threshold){
 
 # a silent version because i needed to reset some values without printing lots off stuff out
 order_up_1st_try_silent = function(suit, order, threshold){
+  player_who_called_trump = NA
+  assign("player_who_called_trump", player_who_called_trump, envir=globalenv())
+  player_who_ordered_it_up = NA
   point_conv_by_suit(suit, eval(parse(text = str_c("p", order[1], "_hand"))))
   if (points >= go_alone_threshold){
     #print(str_c("player ", order[1], " orders it up alone"))
@@ -728,6 +766,12 @@ order_up_2nd_try = function(suit, order, threshold){
 
 
 ```{r}
+add_row_game_data = function(){
+  game_data = game_data %>% 
+    add_row(p1_hand = list(as.character(p1_hand)), p2_hand = list(as.character(p2_hand)), p3_hand = list(as.character(p3_hand)), p4_hand = list(as.character(p4_hand)), offered_up = offered_up, buried = list(buried), trump = trump, maker = maker, player_who_called_trump = player_who_called_trump, player_who_ordered_it_up = player_who_ordered_it_up, alone = alone, dealer = dealer, legal_moves = list(legal_moves), played_card = played_card, team_1_3 = team_1_3, team_2_4 = team_2_4, game_score_1_3 = game_score_1_3, game_score_2_4 = game_score_2_4, trump_points = list(trump_points), non_trump_points = list(non_trump_points), threshold = threshold, go_alone_threshold = go_alone_threshold, trick_num = trick_num, hand_num = hand_num, game_num = i, order = list(order), lead_card = lead_card)
+  assign("game_data", game_data, envir=globalenv())
+}
+
 #all the beginning stuff neatly packaged up
 game_opening = function() {
   decide_deal()
@@ -736,6 +780,8 @@ game_opening = function() {
   game_score_2_4 = 0
   assign("game_score_1_3", game_score_1_3, envir=globalenv())
   assign("game_score_2_4", game_score_2_4, envir=globalenv())
+  add_row_game_data()
+  assign("game_data", game_data, envir=globalenv())
 }
 
 #all the begginning of the hand stuff neatly packaged up
@@ -755,6 +801,8 @@ round_opening = function(){
   team_2_4 = 0
   assign("team_1_3", team_1_3, envir=globalenv())
   assign("team_2_4", team_2_4, envir=globalenv())
+  add_row_game_data()
+  assign("game_data", game_data, envir=globalenv())
 }
 ```
 
@@ -1130,6 +1178,7 @@ play1trick_random = function(order) {
     names(played_cards) = order[-2]
     assign("played_cards", played_cards, envir=globalenv())
   }
+  assign("played_card", played_card, envir=globalenv())
   who_won_trick(trump, lead_card, played_cards)
   
     
@@ -1139,12 +1188,18 @@ play1trick_random = function(order) {
 
 ```{r}
 
+
+
 #play five tricks and change score on the game level
 play1hand = function(order) {
   play1trick_random(order)
+  add_row_game_data()
   play1trick_random(order)
+  add_row_game_data()
   play1trick_random(order)
+  add_row_game_data()
   play1trick_random(order)
+  add_row_game_data()
   play1trick_random(order)
   if (alone == 0){
     if (maker == 1 | maker == 3){
@@ -1196,6 +1251,8 @@ play1hand = function(order) {
   }
   assign("game_score_1_3", game_score_1_3, envir=globalenv())
   assign("game_score_2_4", game_score_2_4, envir=globalenv())
+  add_row_game_data()
+  assign("game_data", game_data, envir=globalenv())
 }
 ```
 
@@ -1224,15 +1281,13 @@ play_entire_game = function(){
 ```
 
 ```{r}
-play_entire_game()
+play_entire_game() #doesn't work because one of the df things is i from the loop
 
-# for (i in 1:30){
-#   play_entire_game()
-# }
+system.time(for (i in 1:30){
+  play_entire_game()
+})
+
+for (i in 1:30){
+  play_entire_game()
+}
 ```
-
-
-```{r}
-system.time(play_entire_game())
-```
-
