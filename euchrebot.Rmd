@@ -778,6 +778,8 @@ game_opening = function() {
   decide_order(dealer)
   game_score_1_3 = 0
   game_score_2_4 = 0
+  hand_num = 1
+  assign("hand_num", hand_num, envir=globalenv())
   assign("game_score_1_3", game_score_1_3, envir=globalenv())
   assign("game_score_2_4", game_score_2_4, envir=globalenv())
   add_row_game_data()
@@ -1192,6 +1194,7 @@ play1trick_random = function(order) {
 
 #play five tricks and change score on the game level
 play1hand = function(order) {
+  hand_num = hand_num +1
   play1trick_random(order)
   add_row_game_data()
   play1trick_random(order)
@@ -1249,6 +1252,7 @@ play1hand = function(order) {
       }
     }
   }
+  assign("hand_num", hand_num, envir=globalenv())
   assign("game_score_1_3", game_score_1_3, envir=globalenv())
   assign("game_score_2_4", game_score_2_4, envir=globalenv())
   add_row_game_data()
@@ -1276,6 +1280,9 @@ play_entire_game = function(){
   if (game_score_2_4 >= 10){
     print("team 2-4 wins!")
   }
+  game_data = game_data %>% 
+    filter(p1_hand != "character(0)" & p2_hand != "character(0)")
+  assign("game_data", game_data, envir=globalenv())
 }
 
 ```
@@ -1283,11 +1290,10 @@ play_entire_game = function(){
 ```{r}
 play_entire_game() #doesn't work because one of the df things is i from the loop
 
-system.time(for (i in 1:30){
+system.time(for (i in 1:5){
   play_entire_game()
 })
 
 for (i in 1:30){
   play_entire_game()
 }
-```
