@@ -1381,9 +1381,13 @@ play_entire_game = function(){
 ```
 
 ```{r}
-#play_entire_game() #doesn't work because one of the df things is i from the loop
 
-system.time(for (i in 1:5){
+#FIX: played card POV is changing. goes 1,2,3. dealer does not change from game to game, but should. 
+
+
+#play_entire_game() #doesn't work because one of the df things is i from the loop, so therefore always run this line of code inside a loop even though it could just be a loop of one. #is there a way to set this up so that the function includes the loop inside of it? it just seems sort of unintuitive to have the loop on the outside of the function. 
+
+system.time(for (i in 1:10){
   game_num = as.numeric(i)
   assign("game_num", game_num, envir=globalenv())
   play_entire_game()
@@ -1393,3 +1397,52 @@ system.time(for (i in 1:5){
 #   play_entire_game()
 # }
 ```
+
+```{r}
+# to input a desired value
+var = readline(prompt = "do you want to clear game_data? (y/n): ")
+
+if (var == "y") {
+  #important parameters
+
+  #point values modified from https://scholarworks.unr.edu/bitstream/handle/11714/3774/Seelbinder_unr_0139M_11172.pdf?isAllowed=y&sequence=1
+  trump_points = c(100,200,400,500,600,1000,1500)
+  non_trump_points = c(1,2,3,4,5,90)
+  threshold = 1700 
+  go_alone_threshold = 2300
+
+  game_data = tibble(p1_hand = c(NA), p2_hand = c(NA), p3_hand = c(NA), p4_hand = c(NA), offered_up = c(NA), buried = c(NA), trump = c(NA), maker = c(NA), player_who_called_trump = c(NA), player_who_ordered_it_up = c(NA), alone = c(NA), dealer = c(NA), legal_moves = c(NA), played_card = c(NA), team_1_3 = c(NA), team_2_4 = c(NA), game_score_1_3 = c(NA), game_score_2_4 = c(NA), trump_points = c(NA), non_trump_points = c(NA), threshold = c(NA), go_alone_threshold = c(NA), trick_num = c(NA), hand_num = c(NA), game_num = c(NA), order = c(NA), lead_card = c(NA))
+
+  p1_hand = NA
+  p2_hand = NA
+  p3_hand = NA
+  p4_hand = NA
+  offered_up = NA
+  buried = NA
+  trump = NA
+  maker = NA
+  player_who_called_trump = NA
+  player_who_ordered_it_up = NA
+  alone = NA
+  dealer = NA
+  legal_moves = NA
+  played_card = NA
+  played_card_1 = NA
+  team_1_3 = NA
+  team_2_4 = NA
+  game_score_1_3 = NA
+  game_score_2_4 = NA
+  #trump_points = NA
+  #non_trump_points = NA
+  #threshold = NA
+  #go_alone_threshold = NA
+  trick_num = NA
+  hand_num = NA
+  game_num = NA
+  order = NA
+  lead_card = NA
+}
+
+  
+```
+
