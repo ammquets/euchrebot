@@ -1,7 +1,7 @@
 # Euchre Bot
 
 ## Description
-A legal game of euchre. Plays to 10 points. Stick the dealer. Currently plays random (but legal) cards with no skill or strategy against itself. euchrebot.Rmd plays the game more or less silently, euchrebot_df.Rmd records hand data in a data frame. 
+Working towards a legal (and hopefully strategic) game of euchre. Plays to 10 points. Stick the dealer. Currently plays random (but legal) cards with no skill or strategy against itself. euchrebot.Rmd plays the game more or less silently, euchrebot_df.Rmd records hand data in a data frame. 
 
 ## Rules
 ### Overview, objective, and scoring
